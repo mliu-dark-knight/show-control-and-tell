@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 random.seed(1234)
 torch.manual_seed(1234)
-device = torch.device('cuda')
+device = torch.device('cpu')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--exp_name', default='ours', type=str,
@@ -28,7 +28,7 @@ parser.add_argument('--exp_name', default='ours', type=str,
 parser.add_argument('--dataset', default='coco', type=str, help='dataset: coco | flickr')
 parser.add_argument('--sample_rl', action='store_true', help='test the model with cider optimization')
 parser.add_argument('--sample_rl_nw', action='store_true', help='test the model with cider + nw optimization')
-parser.add_argument('--batch_size', default=16, type=int, help='batch size')
+parser.add_argument('--batch_size', default=2, type=int, help='batch size')
 parser.add_argument('--nb_workers', default=0, type=int, help='number of workers')
 opt_test = parser.parse_args()
 print(opt_test)
@@ -44,10 +44,10 @@ if opt_test.sample_rl:
 if opt_test.sample_rl_nw:
     exp_name = '%s_%s_%s' % (opt_test.exp_name, opt_test.dataset, 'rl_nw')
     print('Loading \"%s\" model trained with CIDEr + NW optimization.' % opt_test.exp_name)
-saved_data = torch.load('saved_models/%s/%s.pth' % (opt_test.exp_name, exp_name))
+saved_data = torch.load('saved_models/%s/%s.pth' % (opt_test.exp_name, exp_name), map_location='cpu')
 opt = saved_data['opt']
 
-saved_data_sinkhorn = torch.load('saved_models/sinkhorn_network/sinkhorn_network_%s.pth' % opt_test.dataset)
+saved_data_sinkhorn = torch.load('saved_models/sinkhorn_network/sinkhorn_network_%s.pth' % opt_test.dataset, map_location='cpu')
 opt_sinkhorn = saved_data_sinkhorn['opt']
 
 if opt_test.dataset == 'coco':
