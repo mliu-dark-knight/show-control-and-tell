@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 from speaksee.data import DictionaryDataset, Dataset, RawField
 from speaksee.data import TextField, ImageDetectionsField
+from tqdm import tqdm
 
 from config import *
 from data import COCOControlSetField
@@ -16,7 +17,7 @@ n_pkl_entries = 5
 
 def count_total_n_detections(key_dataset: Dataset, hdf5_input):
 	n_detections = 0
-	for image_index in range(len(key_dataset)):
+	for image_index in tqdm(range(len(key_dataset)), ncols=100):
 		image = key_dataset.examples[image_index].image
 		id_image = int(image.split('/')[-1].split('_')[-1].split('.')[0])
 
@@ -51,9 +52,9 @@ def get_file_name(file_path):
 def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--dataset', default='coco', type=str, help='dataset: coco | flickr')
-	parser.add_argument('--output-pkl-file', default='coco-captioning-bottomup.pkl')
-	parser.add_argument('--output-hdf5-file', default='coco-captioning-bottomup.h5')
-	parser.add_argument('--output-glove-file', default='captioning-glove.pkl')
+	parser.add_argument('--output-pkl-file', default='prepro_data/coco-captioning-bottomup.pkl')
+	parser.add_argument('--output-hdf5-file', default='prepro_data/coco-captioning-bottomup.h5')
+	parser.add_argument('--output-glove-file', default='prepro_data/captioning-glove.pkl')
 	return parser.parse_args()
 
 
@@ -87,9 +88,9 @@ if __name__ == '__main__':
 			example_split_map[image_path] = split
 
 	# TODO: debug mode
-	random_idxs = np.random.choice(len(dataset), int(len(dataset) / 5000), replace=False)
-	dataset = DictionaryDataset([dataset.examples[idx] for idx in random_idxs], dataset.fields, 'image')
-	# dataset = DictionaryDataset(dataset.examples, dataset.fields, 'image')
+	# random_idxs = np.random.choice(len(dataset), int(len(dataset) / 5000), replace=False)
+	# dataset = DictionaryDataset([dataset.examples[idx] for idx in random_idxs], dataset.fields, 'image')
+	dataset = DictionaryDataset(dataset.examples, dataset.fields, 'image')
 	key_dataset, value_dataset = dataset.key_dataset, dataset.value_dataset
 
 	hdf5_input = h5py.File(det_field.detections_path, 'r')
@@ -107,7 +108,7 @@ if __name__ == '__main__':
 	              'test': [[] for _ in range(n_pkl_entries)]}
 	n_detections = 0
 
-	for image_index in range(len(key_dataset)):
+	for image_index in tqdm(range(len(key_dataset)), ncols=100):
 		img_file_path = get_file_name(key_dataset.examples[image_index].image)
 		id_image = int(img_file_path.split('_')[-1].split('.')[0])
 		width, height = det_field.img_shapes[str(id_image)]
@@ -128,6 +129,8 @@ if __name__ == '__main__':
 		cls_labels[n_detections: n_detections + img_n_detection] = np.argmax(det_cls_probs, axis=-1)
 		boxes[n_detections: n_detections + img_n_detection] = det_boxes
 		# TODO: may need to modify spatial feature
+		assert np.all(det_boxes[:, [0, 2]] <= width)
+		assert np.all(det_boxes[:, [1, 3]] <= height)
 		spatial[n_detections: n_detections + img_n_detection] \
 			= det_boxes / np.expand_dims([width, height, width, height], axis=0)
 		hdf5_output.flush()

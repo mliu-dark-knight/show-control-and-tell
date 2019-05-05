@@ -2,7 +2,9 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/datasets" />
+      <excludeFolder url="file://$MODULE_DIR$/prepro_data" />
       <excludeFolder url="file://$MODULE_DIR$/saved_data" />
       <excludeFolder url="file://$MODULE_DIR$/saved_models" />
     </content>

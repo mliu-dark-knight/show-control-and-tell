@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 from speaksee.data import DictionaryDataset, Dataset
 from speaksee.data import TextField, RawField
+from tqdm import tqdm
 
 from config import *
 from data import FlickrDetectionField, FlickrControlSetField
@@ -16,7 +17,7 @@ n_pkl_entries = 5
 
 def count_total_n_detections(key_dataset: Dataset, hdf5_input):
 	n_detections = 0
-	for image_index in range(len(key_dataset)):
+	for image_index in tqdm(range(len(key_dataset)), ncols=100):
 		image = key_dataset.examples[image_index].image
 		id_image = int(image.split('/')[-1].split('_')[-1].split('.')[0])
 
@@ -41,8 +42,8 @@ def retrieve_boxes(cls_seq, gt_bboxes, det_bboxes):
 					if iou_max < iou:
 						id_bbox = ii
 						iou_max = iou
-				assert id_bbox > -1
-				id_boxes.add(id_bbox)
+				if id_bbox >= 0:
+					id_boxes.add(id_bbox)
 			bboxes_seq.append(list(id_boxes))
 	return bboxes_seq
 
@@ -53,9 +54,8 @@ def get_file_name(file_path):
 
 def parse_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--output-pkl-file', default='flickr-captioning-bottomup.pkl')
-	parser.add_argument('--output-hdf5-file', default='flickr-captioning-bottomup.h5')
-	parser.add_argument('--output-glove-file', default='captioning-glove.pkl')
+	parser.add_argument('--output-pkl-file', default='prepro_data/flickr-captioning-bottomup.pkl')
+	parser.add_argument('--output-hdf5-file', default='prepro_data/flickr-captioning-bottomup.h5')
 	return parser.parse_args()
 
 
@@ -85,9 +85,9 @@ if __name__ == '__main__':
 			example_split_map[image_path] = split
 
 	# TODO: debug mode
-	random_idxs = np.random.choice(len(dataset), int(len(dataset) / 5000), replace=False)
-	dataset = DictionaryDataset([dataset.examples[idx] for idx in random_idxs], dataset.fields, 'image')
-	# dataset = DictionaryDataset(dataset.examples, dataset.fields, 'image')
+	# random_idxs = np.random.choice(len(dataset), int(len(dataset) / 5000), replace=False)
+	# dataset = DictionaryDataset([dataset.examples[idx] for idx in random_idxs], dataset.fields, 'image')
+	dataset = DictionaryDataset(dataset.examples, dataset.fields, 'image')
 	key_dataset, value_dataset = dataset.key_dataset, dataset.value_dataset
 
 	hdf5_input = h5py.File(det_field.detections_path, 'r')
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 	              'test': [[] for _ in range(n_pkl_entries)]}
 	n_detections = 0
 
-	for image_index in range(len(key_dataset)):
+	for image_index in tqdm(range(len(key_dataset)), ncols=100):
 		img_file_path = get_file_name(key_dataset.examples[image_index].image)
 		id_image = int(img_file_path.split('_')[-1].split('.')[0])
 		width, height = det_field.img_shapes[str(id_image)]
@@ -126,6 +126,8 @@ if __name__ == '__main__':
 		cls_probs[n_detections: n_detections + img_n_detection] = det_cls_probs
 		boxes[n_detections: n_detections + img_n_detection] = det_boxes
 		# TODO: may need to modify spatial feature
+		assert np.all(det_boxes[:, [0, 2]] <= width)
+		assert np.all(det_boxes[:, [1, 3]] <= height)
 		spatial[n_detections: n_detections + img_n_detection] \
 			= det_boxes / np.expand_dims([width, height, width, height], axis=0)
 		hdf5_output.flush()
@@ -153,8 +155,5 @@ if __name__ == '__main__':
 	assert n_detections == total_n_detections
 	hdf5_output.close()
 
-	output_glove = {'classes': det_field.classes, 'vectors': det_field.vectors}
 	with open(opt.output_pkl_file, 'wb') as f:
 		pickle.dump(output_pkl, f)
-	with open(opt.output_glove_file, 'wb') as f:
-		pickle.dump(output_glove, f)
