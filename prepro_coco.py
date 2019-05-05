@@ -99,7 +99,7 @@ if __name__ == '__main__':
 	# TODO: do not forget to close
 	hdf5_output = h5py.File(opt.output_hdf5_file, 'w')
 	features = hdf5_output.create_dataset('features', shape=(total_n_detections, 2048), dtype=np.float32)
-	cls_labels = hdf5_output.create_dataset('cls_labels', shape=(total_n_detections,), dtype=np.float32)
+	cls_labels = hdf5_output.create_dataset('cls_labels', shape=(total_n_detections,), dtype=int)
 	spatial = hdf5_output.create_dataset('spatial', shape=(total_n_detections, 4), dtype=np.float32)
 	boxes = hdf5_output.create_dataset('boxes', shape=(total_n_detections, 4), dtype=int)
 

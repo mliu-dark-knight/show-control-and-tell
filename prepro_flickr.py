@@ -96,7 +96,7 @@ if __name__ == '__main__':
 	# TODO: do not forget to close
 	hdf5_output = h5py.File(opt.output_hdf5_file, 'w')
 	features = hdf5_output.create_dataset('features', shape=(total_n_detections, 2048), dtype=np.float32)
-	cls_probs = hdf5_output.create_dataset('cls_prob', shape=(total_n_detections, 1601), dtype=int)
+	cls_labels = hdf5_output.create_dataset('cls_labels', shape=(total_n_detections,), dtype=int)
 	spatial = hdf5_output.create_dataset('spatial', shape=(total_n_detections, 4), dtype=np.float32)
 	boxes = hdf5_output.create_dataset('boxes', shape=(total_n_detections, 4), dtype=int)
 
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
 		img_n_detection = len(det_boxes)
 		features[n_detections: n_detections + img_n_detection] = det_features
-		cls_probs[n_detections: n_detections + img_n_detection] = det_cls_probs
+		cls_labels[n_detections: n_detections + img_n_detection] = np.argmax(det_cls_probs, axis=-1)
 		boxes[n_detections: n_detections + img_n_detection] = det_boxes
 		# TODO: may need to modify spatial feature
 		assert np.all(det_boxes[:, [0, 2]] <= width)
