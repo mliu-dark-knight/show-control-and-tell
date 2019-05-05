@@ -87,8 +87,8 @@ if __name__ == '__main__':
 			example_split_map[image_path] = split
 
 	# TODO: debug mode
-	max_index = int(len(dataset) / 10000)
-	dataset = DictionaryDataset(dataset.examples[:max_index], dataset.fields, 'image')
+	random_idxs = np.random.choice(len(dataset), int(len(dataset) / 5000), replace=False)
+	dataset = DictionaryDataset([dataset.examples[idx] for idx in random_idxs], dataset.fields, 'image')
 	# dataset = DictionaryDataset(dataset.examples, dataset.fields, 'image')
 	key_dataset, value_dataset = dataset.key_dataset, dataset.value_dataset
 
