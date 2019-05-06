@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import os
 import pickle
 
@@ -29,7 +30,7 @@ def count_total_n_detections(key_dataset: Dataset, hdf5_input):
 
 def retrieve_boxes(cls_seq, selected_classes, sorted_idxs, max_detections):
 	bboxes_seq = []
-	for j, cls in enumerate(cls_seq):
+	for cls in cls_seq:
 		if cls is None:
 			bboxes_seq.append([])
 		elif cls == '_':
@@ -37,8 +38,12 @@ def retrieve_boxes(cls_seq, selected_classes, sorted_idxs, max_detections):
 		else:
 			normalized_cls = normalize_cls(cls)
 			seed_detections = [i for i, c in enumerate(selected_classes) if c == cls or c == normalized_cls]
-			bboxes_seq.append(list(np.unique(seed_detections)[:max_detections]))
-	# TODO: deal with empty bboxes
+			if len(seed_detections) > 0:
+				bboxes_seq.append(list(np.unique(seed_detections)[:max_detections]))
+			# avoid empty boxes
+			else:
+				bboxes_seq.append(list(sorted_idxs[:max_detections]))
+	assert len(list(itertools.chain.from_iterable(bboxes_seq))) > 0
 	return bboxes_seq
 
 
@@ -142,8 +147,11 @@ if __name__ == '__main__':
 
 		for caption_index in value_dataset.dictionary[image_index]:
 			cls_seq = value_dataset.examples[caption_index].detection[1]
+			text = value_dataset.examples[caption_index].text
+			if len(text.split()) != cls_seq:
+				continue
 			bboxes_seq = retrieve_boxes(cls_seq, selected_classes, sorted_idxs, det_field.max_detections)
-			output_pkl[split][0].append(value_dataset.examples[caption_index].text)
+			output_pkl[split][0].append(text)
 			output_pkl[split][1].append([i for i in range(n_detections - img_n_detection, n_detections, 1)])
 			output_pkl[split][2].append(list(cls_seq))
 			output_pkl[split][3].append(bboxes_seq)
