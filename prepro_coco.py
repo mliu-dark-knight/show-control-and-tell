@@ -148,7 +148,7 @@ if __name__ == '__main__':
 		for caption_index in value_dataset.dictionary[image_index]:
 			cls_seq = value_dataset.examples[caption_index].detection[1]
 			text = value_dataset.examples[caption_index].text
-			if len(text.split()) != cls_seq:
+			if len(text.split()) != len(cls_seq):
 				continue
 			bboxes_seq = retrieve_boxes(cls_seq, selected_classes, sorted_idxs, det_field.max_detections)
 			output_pkl[split][0].append(text)
