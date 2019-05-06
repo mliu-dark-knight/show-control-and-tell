@@ -1,5 +1,4 @@
 import argparse
-import itertools
 import os
 import pickle
 
@@ -36,10 +35,15 @@ def retrieve_boxes(cls_seq, selected_classes, sorted_idxs, max_detections):
 		elif cls == '_':
 			bboxes_seq.append(list(sorted_idxs[:max_detections]))
 		else:
-			seed_detections = [i for i, c in enumerate(selected_classes) if c == cls]
+			normalized_cls = normalize_cls(cls)
+			seed_detections = [i for i, c in enumerate(selected_classes) if c == cls or c == normalized_cls]
 			bboxes_seq.append(list(np.unique(seed_detections)[:max_detections]))
-	assert len(list(itertools.chain.from_iterable(bboxes_seq))) > 0
+	# TODO: deal with empty bboxes
 	return bboxes_seq
+
+
+def normalize_cls(cls):
+	return cls.split(',')[0].split(' ')[-1]
 
 
 def get_file_name(file_path):

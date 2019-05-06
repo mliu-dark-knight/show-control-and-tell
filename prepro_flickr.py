@@ -118,8 +118,6 @@ if __name__ == '__main__':
 		det_cls_probs = det_cls_probs[non_background_idxs]
 		det_features = det_features[non_background_idxs]
 		det_boxes = det_boxes[non_background_idxs]
-		sorted_idxs = np.argsort(np.max(det_cls_probs, -1))[::-1]
-		sorted_dets = det_features[sorted_idxs]
 
 		img_n_detection = len(det_boxes)
 		features[n_detections: n_detections + img_n_detection] = det_features
